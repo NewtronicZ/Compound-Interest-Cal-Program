@@ -1,6 +1,6 @@
 // ตัวแปรสำหรับเก็บ instance ของ Chart เพื่อใช้ในการอัปเดตหรือลบกราฟเก่า
 let compoundChart; 
-// ตัวแปรสำหรับฟอร์แมตตัวเลขสกุลเงิน (ใช้สำหรับการแสดงผลเท่านั้น)
+// ตัวแปรสำหรับฟอร์แมตตัวเลขสกุลเงิน
 const formatter = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
@@ -18,15 +18,13 @@ function calculateCompoundInterest() {
     const compounding = 12;
     const n = compounding;
     const r_per_n = rate / n; // อัตราดอกเบี้ยต่องวด
-    const total_n = n * time; // จำนวนงวดทั้งหมด
-
+    
     // 2. ตรวจสอบความถูกต้อง
     if (isNaN(rate) || isNaN(time) || (principal < 0 && monthlyDeposit < 0) || time < 1) {
         document.getElementById('totalDeposit').textContent = formatter.format(0) + " บาท";
         document.getElementById('totalInterest').textContent = formatter.format(0) + " บาท";
         document.getElementById('totalWealth').textContent = "กรุณาใส่จำนวนเงินหรือระยะเวลาที่ถูกต้อง";
         
-        // ลบกราฟเก่าออกหากมี
         if (compoundChart) compoundChart.destroy();
         return;
     }
@@ -41,35 +39,30 @@ function calculateCompoundInterest() {
 
     // 3. คำนวณยอดรวมรายปี
     for (let year = 1; year <= time; year++) {
-        // จำนวนงวดที่คำนวณถึงสิ้นปีนี้
         const total_compounding_periods = n * year;
 
-        // สูตรดอกเบี้ยทบต้น (FV ของเงินต้นเริ่มต้น)
+        // FV ของเงินต้นเริ่มต้น
         const fv_principal = principal * Math.pow((1 + r_per_n), total_compounding_periods);
 
-        // สูตรมูลค่าอนาคตของ Annuity Due (FV ของเงินฝากรายงวด)
+        // FV ของ Annuity Due
         let fv_annuity = 0;
         if (monthlyDeposit > 0) {
-            // จำนวนงวดที่ฝากไปแล้ว
             const num_deposits = n * year; 
             
-            // สูตร FVA (Ordinary Annuity)
             const fv_annuity_ordinary = monthlyDeposit * (
                 (Math.pow((1 + r_per_n), num_deposits) - 1) / r_per_n
             );
             
-            // แปลงเป็น Annuity Due (ฝากต้นงวด: คูณด้วย (1 + r/n))
+            // แปลงเป็น Annuity Due
             fv_annuity = fv_annuity_ordinary * (1 + r_per_n);
         }
 
-        // ยอดเงินรวม ณ สิ้นปี
         const finalAmountAtYear = fv_principal + fv_annuity;
         
         annualLabels.push(year);
         annualData.push(finalAmountAtYear);
     }
     
-    // คำนวณเงินฝากรวมทั้งหมด (เฉพาะปีสุดท้าย)
     totalDeposited += (monthlyDeposit * 12 * time);
 
     // 4. คำนวณผลลัพธ์สุดท้าย
@@ -91,22 +84,24 @@ function calculateCompoundInterest() {
  * ฟังก์ชันวาดกราฟด้วย Chart.js
  */
 function renderChart(labels, totalAmounts, principal) {
-    const ctx = document.getElementById('compoundInterestChart').getContext('2d');
+    // ต้องมั่นใจว่า Element 'compoundInterestChart' ถูกโหลดแล้ว
+    const chartElement = document.getElementById('compoundInterestChart');
+    if (!chartElement) {
+        console.error("Chart Canvas Element is missing!");
+        return;
+    }
+    const ctx = chartElement.getContext('2d');
     
-    // หากมีกราฟเดิมอยู่ ให้ทำลายทิ้งก่อน
     if (compoundChart) {
         compoundChart.destroy();
     }
     
-    // สร้างชุดข้อมูลของเงินฝากรวม (Total Deposit) สำหรับเปรียบเทียบ
     const monthlyDeposit = parseFloat(document.getElementById('monthlyDeposit').value) || 0;
     
     const depositData = labels.map(year => {
-        // total_deposit = เงินต้น + (ฝากรายเดือน * 12 * ปี)
         return principal + (monthlyDeposit * 12 * year);
     });
     
-    // สร้างกราฟใหม่
     compoundChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -126,14 +121,17 @@ function renderChart(labels, totalAmounts, principal) {
                     data: depositData,
                     borderColor: 'rgb(40, 167, 69)', 
                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0, // เส้นตรง
+                    tension: 0, 
                     fill: false,
                     pointRadius: 0
                 }
             ]
         },
         options: {
+            // *** การตั้งค่าสำคัญสำหรับ Responsive ***
             responsive: true,
+            maintainAspectRatio: false, // ปิดเพื่ออนุญาตให้ปรับขนาดได้อย่างอิสระตาม CSS
+            
             scales: {
                 x: {
                     title: { display: true, text: 'ระยะเวลา (ปี)' },
