@@ -1,0 +1,28 @@
+{
+  "name": "node.js-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "SET DEBUG=app & nodemon app.js",
+    "debug": "SET DEBUG=app:* & nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Phongsatorn",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "debug": "^4.3.2",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.15"
+  },
+  "nodemonconfig": {
+    "restartable": "rs",
+    "delay": 2000,
+    "env": {
+      "PORT": 3000  
+    }
+  }
+}
