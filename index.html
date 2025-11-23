@@ -5,20 +5,22 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css" /> 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300&family=Libre+Franklin:wght@100&display=swap"
         rel="stylesheet" />
-    <title>เครื่องคำนวณดอกเบี้ยทบต้น (ลงทุนต่อเดือน)</title>
-    <script src="script.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <title>เครื่องคำนวณดอกเบี้ยทบต้น (ลงทุนต่อเดือน) พร้อมกราฟ</title>
 </head>
 
 <body>
     <div class="calculator-container">
-        <img src="./src/img/logo.png" width="150" height="120">
-        <h1> โปรเเกรมคำนวณดอกเบี้ยทบต้น</h1>
+        <img src="./src/img/logo.png" width="150" height="120" alt="Program Logo">
+        <h1>โปรเเกรมคำนวณดอกเบี้ยทบต้น</h1>
 
         <div class="input-group">
-            <label for="principal">เงินต้นเริ่มต้น (บาท)</label>
+            <label for="principal">เงินต้น (บาท)</label>
             <input type="number" id="principal" value="0" min="0">
         </div>
 
@@ -34,13 +36,14 @@
 
         <div class="input-group">
             <label for="time">ระยะเวลา (ปี)</label>
-            <input type="number" id="time" value="1" min="1">
+            <input type="number" id="time" value="10" min="1">
         </div>
 
         <div class="input-group hidden-compounding">
             <label for="compounding">ความถี่ในการทบต้นต่อปี</label>
             <input type="hidden" id="compounding" value="12">
         </div>
+        
         <button id="calculate-btn">คำนวณ</button>
 
         <div class="result-box">
@@ -48,6 +51,13 @@
             <p>ดอกเบี้ยทั้งหมด (Interest) : <span id="totalInterest">0.00 บาท</span></p>
             <p>เงินรวมทั้งหมด (Wealth) : <span id="totalWealth">0.00 บาท</span></p>
         </div>
+        
+        <div class="chart-container">
+            <canvas id="compoundInterestChart"></canvas>
+        </div>
+
     </div>
 
+    <script src="script.js"></script>
+</body>
 </html>

@@ -1,7 +1,8 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* สมมติว่า Path ของรูปภาพ (../img/bg.jpg) ถูกต้องแล้ว */
+    /* สมมติว่า Path ของรูปภาพ (./src/img/bg.jpg) ถูกต้องแล้ว */
     background: url('./src/img/bg.jpg') no-repeat center center fixed;
+    background-size: cover; /* เพิ่มเติม: ทำให้ภาพพื้นหลังคลุมเต็มพื้นที่ */
 
     /* การจัดกึ่งกลางแนวนอน */
     display: flex;
@@ -18,12 +19,26 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 450px;
+    /* ปรับ max-width เริ่มต้นให้กว้างขึ้นเล็กน้อยเพื่อรองรับกราฟในมือถือ */
+    max-width: 90vw; /* ใช้ 90% ของความกว้างหน้าจอ */
     text-align: center;
-    /* แก้ไข CSS: จัดกึ่งกลางแนวนอนสำหรับ Container */
     margin-left: auto;
     margin-right: auto;
+    /* ในภาพโค้ด: ดูเหมือนว่า .calculator-container ไม่ได้มี max-width: 450px แล้ว 
+       แต่ถ้ามี ให้ปรับเป็น 450px สำหรับ input-output และใช้ Media Query ขยายสำหรับกราฟ */
 }
+
+/* ---------------------------------------------------------------------- */
+/* *** การแก้ไขหลักสำหรับ Responsive Graph *** */
+/* Media Query สำหรับหน้าจอขนาดใหญ่ (เช่น Desktop/Tablet) */
+/* เมื่อจอใหญ่ขึ้น จะขยาย container ให้กว้างพอสำหรับ Input/Output และ กราฟ */
+@media (min-width: 768px) { 
+    .calculator-container {
+        /* ขยาย max-width ให้กว้างขึ้นเพื่อรองรับกราฟด้านล่าง */
+        max-width: 800px; 
+    }
+}
+/* ---------------------------------------------------------------------- */
 
 h1 {
     color: #007bff;
@@ -95,4 +110,23 @@ button:hover {
     font-weight: bold;
     color: #007bff;
     float: right;
+}
+
+/* สไตล์สำหรับส่วนกราฟที่เพิ่มเข้ามา */
+.chart-container {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f8f9fa; /* สีพื้นหลังอ่อน ๆ */
+    border-radius: 10px;
+    /* เพิ่มเติม: ทำให้คอนเทนเนอร์กราฟปรับขนาดได้ */
+    width: 100%; 
+    height: auto;
+}
+
+/* **สำคัญมาก**: Chart.js ควรจะ Responsive โดยอัตโนมัติ 
+   แต่เพื่อให้แน่ใจว่า Canvas ไม่ถูกกำหนดความสูงตายตัว */
+#compoundInterestChart {
+    /* ใช้ CSS เพื่อกำหนดความสูง/ความกว้างที่ยืดหยุ่น */
+    /* Chart.js จะจัดการความสูงอัตราส่วนเมื่อกำหนด options: { responsive: true, maintainAspectRatio: false } */
+    max-height: 400px; 
 }
