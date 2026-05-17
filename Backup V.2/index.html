@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compound Interest Calculator</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d111c'/><text y='72' x='22' font-size='68' fill='%2300f2ff' font-family='Orbitron, sans-serif' font-weight='900' style='text-shadow: 0 0 15px rgba(0,242,255,0.8);'>N</text></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="live-background-system">
+        <div class="neon-orb orb-cyan"></div>
+        <div class="neon-orb orb-purple"></div>
+        <div class="neon-orb orb-neon"></div>
+    </div>
+
+    <header>
+        <div class="brand">
+            <div class="logo-nbis-container">
+                <i class="fa-solid fa-n"></i>
+            </div>
+            <h1>Compound Interest Calculator</h1>
+        </div>
+        <div class="system-status">
+            <div class="status-dot"></div>
+            <span>AI ENGINE LIVE</span>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        
+        <section class="control-panel">
+            <div>
+                <h2 class="panel-title">ป้อนข้อมูลแบบจำลอง</h2>
+                <p class="panel-subtitle">ลากแถบเลื่อนหรือคลิกพิมพ์กรอกตัวเลขโดยตรงเพื่อคำนวณ Real-time</p>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label-row">
+                    <label for="initialDeposit"><i class="fa-solid fa-vault"></i> เงินต้นเริ่มแรก</label>
+                    <input type="number" id="initialDepositVal" class="input-value-badge-edit" min="0" max="2000000" step="10000" value="60000">
+                </div>
+                <input type="range" id="initialDeposit" min="0" max="2000000" step="10000" value="60000">
+            </div>
+
+            <div class="input-group">
+                <div class="input-label-row">
+                    <label for="monthlyContribution"><i class="fa-solid fa-hand-holding-dollar"></i> เงินออมรายเดือน</label>
+                    <input type="number" id="monthlyContributionVal" class="input-value-badge-edit" min="0" max="100000" step="1000" value="7000">
+                </div>
+                <input type="range" id="monthlyContribution" min="0" max="100000" step="1000" value="7000">
+            </div>
+
+            <div class="input-group">
+                <div class="input-label-row">
+                    <label for="interestRate"><i class="fa-solid fa-chart-line"></i> อัตราผลตอบแทนต่อปี (%)</label>
+                    <input type="number" id="interestRateVal" class="input-value-badge-edit" min="1" max="30" step="0.5" value="12">
+                </div>
+                <input type="range" id="interestRate" min="1" max="30" step="0.5" value="12">
+            </div>
+
+            <div class="input-group">
+                <div class="input-label-row">
+                    <label for="years"><i class="fa-solid fa-calendar-days"></i> ระยะเวลาการลงทุน (ปี)</label>
+                    <input type="number" id="yearsVal" class="input-value-badge-edit" min="1" max="40" step="1" value="23">
+                </div>
+                <input type="range" id="years" min="1" max="40" step="1" value="23">
+            </div>
+        </section>
+
+        <section class="main-display">
+            
+            <div class="metrics-grid">
+                <div class="metric-card card-cyan">
+                    <span class="metric-title">เงินต้นรวมทั้งหมด</span>
+                    <span class="metric-value" id="totalPrincipalMetric">0 ฿</span>
+                </div>
+                <div class="metric-card card-neon">
+                    <span class="metric-title">ดอกเบี้ย/ผลตอบแทนสะสม</span>
+                    <span class="metric-value" id="totalInterestMetric">0 ฿</span>
+                </div>
+                <div class="metric-card card-purple">
+                    <span class="metric-title">มูลค่าพอร์ตสุทธิ</span>
+                    <span class="metric-value" id="totalBalanceMetric">0 ฿</span>
+                </div>
+            </div>
+
+            <div class="visualization-block">
+                <div class="chart-header">
+                    <h3 class="chart-title"><i class="fa-solid fa-chart-area"></i> กราฟแสดงการเติบโตแบบทบต้น (Exponential Growth)</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <section class="watchlist-section">
+        <div class="watchlist-box">
+            <div class="watchlist-toolbar">
+                <div class="toolbar-left-side">
+                    <i class="fa-solid fa-table-list icon-head"></i>
+                    <h2>รายการเฝ้าดูสินทรัพย์</h2>
+                    
+                    <div class="select-dropdown-box">
+                        <select id="watchlistSelectSelector" class="custom-dropdown-select">
+                            <option value="list1">📊 Watchlist 1 (ค่าเริ่มต้นระบบ)</option>
+                            <option value="list2">💾 Watchlist 2 (เพิ่ม/ลบ และเซฟบันทึกได้)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <form id="actionSearchForm" class="search-ticker-form form-blocked">
+                    <div class="input-search-field">
+                        <i class="fa-solid fa-search prefix-icon"></i>
+                        <input type="text" id="inputStockTicker" placeholder="เลือกหมวด Watchlist 2 ก่อนเพื่อเริ่มใช้งาน" disabled required>
+                    </div>
+                    <button type="submit" id="submitAddBtn" disabled><i class="fa-solid fa-plus"></i> เพิ่มหุ้น</button>
+                </form>
+            </div>
+
+            <div id="statusInfoMessage" class="status-toast-log"></div>
+
+            <div class="responsive-table-holder">
+                <table class="fixed-layout-table">
+                    <thead>
+                        <tr>
+                            <th class="align-left">ชื่อย่อหุ้น</th>
+                            <th class="align-left">ชื่อบริษัทสินทรัพย์</th>
+                            <th class="align-right">ล่าสุด (USD)</th>
+                            <th class="align-right">ราคาเปิด</th>
+                            <th class="align-right">ราคาสูงสุด</th>
+                            <th class="align-right">ราคาต่ำสุด</th>
+                            <th class="align-right">เปลี่ยนแปลง</th>
+                            <th class="align-right">% เปลี่ยน</th>
+                            <th class="align-center" id="colActionManage">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watchlistDynamicBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>

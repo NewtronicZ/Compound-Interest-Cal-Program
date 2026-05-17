@@ -1,62 +1,144 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css" /> 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300&family=Libre+Franklin:wght@100&display=swap"
-        rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEO COMPASS | Financial Terminal</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2306070d' stroke='rgba(0,242,255,0.15)' stroke-width='2'/><text y='72' x='24' font-size='65' fill='%2300f2ff' font-family='Orbitron, sans-serif' font-weight='900' style='text-shadow: 0 0 15px rgba(0,242,255,0.8);'>N</text></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <title>เครื่องคำนวณดอกเบี้ยทบต้น (ลงทุนต่อเดือน) พร้อมกราฟ</title>
+    <script src="https://s3.tradingview.com/tv.js"></script>
 </head>
-
 <body>
-    <div class="calculator-container">
-        <img src="./src/img/logo.png" width="150" height="120" alt="Program Logo">
-        <h1>โปรเเกรมคำนวณดอกเบี้ยทบต้น</h1>
 
-        <div class="input-group">
-            <label for="principal">เงินต้นเริ่มต้น (บาท)</label>
-            <input type="number" id="principal" value="0" min="0">
-        </div>
+    <section class="calculator-container">
+        <header class="app-header">
+            <div class="brand-logo-zone">
+               
+            </div>
+            <h1 class="main-title">Compound Interest Calculator</h1>
+            <p class="subtitle-text">ระบบคำนวณผลตอบแทนทบต้นและวิเคราะห์กราฟตลาดสากลแบบเรียลไทม์</p>
+        </header>
 
-        <div class="input-group">
-            <label for="monthlyDeposit">เงินฝากเพิ่มรายเดือน (บาท)</label>
-            <input type="number" id="monthlyDeposit" value="1000" min="0">
-        </div>
+        <div class="dashboard-grid">
+            <div class="glass-panel control-box">
+                <h2 class="panel-section-title"><i class="fa-solid fa-sliders-h"></i> ปรับแต่งตัวแปรการลงทุน</h2>
+                
+                <div class="input-dynamic-group">
+                    <div class="label-badge-row">
+                        <label for="initialDeposit">เงินต้นเริ่มแรก (Initial Deposit)</label>
+                        <input type="number" id="initialDepositVal" class="numeric-box-input" min="0" max="10000000">
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="initialDeposit" class="modern-slider" min="0" max="2000000" step="5000" value="60000">
+                    </div>
+                </div>
 
-        <div class="input-group">
-            <label for="rate">อัตราดอกเบี้ยต่อปี (%)</label>
-            <input type="number" id="rate" value="15" min="0" step="0.01">
-        </div>
+                <div class="input-dynamic-group">
+                    <div class="label-badge-row">
+                        <label for="monthlyContribution">เงินฝากรายเดือน (Monthly Contribution)</label>
+                        <input type="number" id="monthlyContributionVal" class="numeric-box-input" min="0" max="1000000">
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="monthlyContribution" class="modern-slider" min="0" max="100000" step="500" value="5000">
+                    </div>
+                </div>
 
-        <div class="input-group">
-            <label for="time">ระยะเวลา (ปี)</label>
-            <input type="number" id="time" value="10" min="1">
-        </div>
+                <div class="input-dynamic-group">
+                    <div class="label-badge-row">
+                        <label for="interestRate">อัตราผลตอบแทนคาดหวังปีต่อปี (%)</label>
+                        <input type="number" id="interestRateVal" class="numeric-box-input" min="0" max="50" step="0.1">
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="interestRate" class="modern-slider" min="0" max="30" step="0.2" value="12">
+                    </div>
+                </div>
 
-        <div class="input-group hidden-compounding">
-            <label for="compounding">ความถี่ในการทบต้นต่อปี</label>
-            <input type="hidden" id="compounding" value="12">
-        </div>
-        
-        <button id="calculate-btn">คำนวณ</button>
+                <div class="input-dynamic-group">
+                    <div class="label-badge-row">
+                        <label for="years">ระยะเวลาถือครองการลงทุน (ปี)</label>
+                        <input type="number" id="yearsVal" class="numeric-box-input" min="1" max="60">
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="years" class="modern-slider" min="1" max="50" step="1" value="23">
+                    </div>
+                </div>
+            </div>
 
-        <div class="result-box">
-            <p>เงินฝากรวมทั้งหมด : <span id="totalDeposit">0.00 บาท</span></p>
-            <p>ดอกเบี้ยทั้งหมด (Interest) : <span id="totalInterest">0.00 บาท</span></p>
-            <p>เงินรวมทั้งหมด (Wealth) : <span id="totalWealth">0.00 บาท</span></p>
-        </div>
-        
-        <div class="chart-container">
-            <canvas id="compoundInterestChart"></canvas>
-        </div>
+            <div class="glass-panel telemetry-visual-box">
+                <div class="metrics-summary-strip">
+                    <div class="metric-card">
+                        <span class="metric-tag">เงินต้นสะสมสุทธิ</span>
+                        <div class="metric-value" id="totalPrincipalMetric">0 ฿</div>
+                    </div>
+                    <div class="metric-card-highlight">
+                        <span class="metric-tag-highlight">ดอกเบี้ย/ผลตอบแทนสะสม</span>
+                        <div class="metric-value-neon" id="totalInterestMetric">0 ฿</div>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-tag">มูลค่าพอร์ตรวมสุทธิ</span>
+                        <div class="metric-value" id="totalBalanceMetric">0 ฿</div>
+                    </div>
+                </div>
 
-    </div>
+                <div class="canvas-chart-holder">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="calculator-container" style="padding-top: 0; margin-top: -10px;">
+        <div class="glass-panel" style="padding: 24px;">
+            <div class="market-header-terminal" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <h2 class="panel-section-title" style="margin-bottom: 0;">
+                    <i class="fa-solid fa-chart-line" style="color: #00f2ff;"></i> REAL-TIME MARKET TERMINAL
+                </h2>
+                
+                <div class="custom-select-container" style="display: flex; align-items: center; gap: 10px;">
+                    <label for="terminalStockSelect" style="color: #94a3b8; font-size: 13px; font-weight: 500;">เลือกดูหุ้นเจาะลึก:</label>
+                    <select id="terminalStockSelect" class="classic-menu-dropdown" style="background: #161b26; color: #ffffff; border: 1px solid rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 6px; font-family: 'Plus Jakarta Sans'; font-weight: 600; cursor: pointer; outline: none;">
+                        <option value="NYSE:TSM">TSM (Taiwan Semiconductor)</option>
+                        <option value="NASDAQ:GOOGL">GOOGL (Alphabet Inc.)</option>
+                        <option value="NASDAQ:NVDA">NVDA (NVIDIA Corporation)</option>
+                        <option value="NASDAQ:AMZN">AMZN (Amazon.com Inc)</option>
+                        <option value="NASDAQ:ASML">ASML (ASML Holding NV)</option>
+                        <option value="NASDAQ:MU">MU (Micron Technology)</option>
+                        <option value="NASDAQ:AMD">AMD (Advanced Micro Devices)</option>
+                        <option value="NYSE:GEV">GEV (GE Vernova)</option>
+                        <option value="NYSE:UNH">UNH (UnitedHealth Group)</option>
+                        <option value="NASDAQ:ASTS">ASTS (AST SpaceMobile)</option>
+                        <option value="NASDAQ:MSFT">MSFT (Microsoft Corp)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="market-widgets-grid">
+                
+                <div class="tradingview-widget-wrapper">
+                    <div class="widget-title-bar" style="background: rgba(255,255,255,0.02); padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: 600; color: #94a3b8; font-family: 'Orbitron'; letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-globe" style="color: #39ff14;"></i> S&P 500 INDEX (VOO)
+                    </div>
+                    <div id="tv-sp500-chart-container" style="height: 600px; width: 100%;"></div>
+                </div>
+
+                <div class="tradingview-widget-wrapper">
+                    <div class="widget-title-bar" style="background: rgba(255,255,255,0.02); padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: 600; color: #94a3b8; font-family: 'Orbitron'; letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-bolt" style="color: #00f2ff;"></i> SELECTED STOCK LIVE CHART
+                    </div>
+                    <div id="tv-individual-chart-container" style="height: 600px; width: 100%;"></div>
+                </div>
+
+            </div>
+        </div>
+    </section>
 
     <script src="script.js"></script>
 </body>

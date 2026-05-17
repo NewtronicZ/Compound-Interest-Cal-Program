@@ -1,179 +1,231 @@
-// ตัวแปรสำหรับเก็บ instance ของ Chart เพื่อใช้ในการอัปเดตหรือลบกราฟเก่า
-let compoundChart; 
-// ตัวแปรสำหรับฟอร์แมตตัวเลขสกุลเงิน
-const formatter = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// =============================================================
+// 1. Wealth Compound Calculator & Bidirectional Sync System
+// =============================================================
+const initialDepositInput = document.getElementById('initialDeposit');
+const monthlyContributionInput = document.getElementById('monthlyContribution');
+const interestRateInput = document.getElementById('interestRate');
+const yearsInput = document.getElementById('years');
 
+const initialDepositVal = document.getElementById('initialDepositVal');
+const monthlyContributionVal = document.getElementById('monthlyContributionVal');
+const interestRateVal = document.getElementById('interestRateVal');
+const yearsVal = document.getElementById('yearsVal');
 
-/**
- * ฟังก์ชันหลักในการคำนวณดอกเบี้ยทบต้นและแสดงผลรวมถึงกราฟ
- */
-function calculateCompoundInterest() {
-    // 1. รับค่าจาก Input
-    const principal = parseFloat(document.getElementById('principal').value) || 0;
-    const monthlyDeposit = parseFloat(document.getElementById('monthlyDeposit').value) || 0;
-    const rate = parseFloat(document.getElementById('rate').value) / 100; // อัตราดอกเบี้ยทศนิยม
-    const time = parseInt(document.getElementById('time').value); // ระยะเวลาเป็นปี
+const totalPrincipalMetric = document.getElementById('totalPrincipalMetric');
+const totalInterestMetric = document.getElementById('totalInterestMetric');
+const totalBalanceMetric = document.getElementById('totalBalanceMetric');
 
-    // กำหนดให้ n = 12 คงที่ (ทบต้นเดือนละ 1 ครั้ง)
-    const compounding = 12;
-    const n = compounding;
-    const r_per_n = rate / n; // อัตราดอกเบี้ยต่องวด
-    
-    // 2. ตรวจสอบความถูกต้อง
-    if (isNaN(rate) || isNaN(time) || (principal < 0 && monthlyDeposit < 0) || time < 1) {
-        document.getElementById('totalDeposit').textContent = formatter.format(0) + " บาท";
-        document.getElementById('totalInterest').textContent = formatter.format(0) + " บาท";
-        document.getElementById('totalWealth').textContent = "กรุณาใส่จำนวนเงินหรือระยะเวลาที่ถูกต้อง";
-        
-        if (compoundChart) compoundChart.destroy();
-        return;
-    }
+let growthChart;
 
-    let totalDeposited = principal;
-    let annualData = []; // เก็บยอดเงินรวม ณ สิ้นปีแต่ละปี
-    let annualLabels = []; // เก็บหมายเลขปี (0, 1, 2, ...)
-
-    // บันทึกยอดเริ่มต้น (ปีที่ 0)
-    annualLabels.push(0);
-    annualData.push(principal);
-
-    // 3. คำนวณยอดรวมรายปี
-    for (let year = 1; year <= time; year++) {
-        const total_compounding_periods = n * year;
-
-        // FV ของเงินต้นเริ่มต้น
-        const fv_principal = principal * Math.pow((1 + r_per_n), total_compounding_periods);
-
-        // FV ของ Annuity Due
-        let fv_annuity = 0;
-        if (monthlyDeposit > 0) {
-            const num_deposits = n * year; 
-            
-            const fv_annuity_ordinary = monthlyDeposit * (
-                (Math.pow((1 + r_per_n), num_deposits) - 1) / r_per_n
-            );
-            
-            // แปลงเป็น Annuity Due
-            fv_annuity = fv_annuity_ordinary * (1 + r_per_n);
-        }
-
-        const finalAmountAtYear = fv_principal + fv_annuity;
-        
-        annualLabels.push(year);
-        annualData.push(finalAmountAtYear);
-    }
-    
-    totalDeposited += (monthlyDeposit * 12 * time);
-
-    // 4. คำนวณผลลัพธ์สุดท้าย
-    const finalFutureValue = annualData[annualData.length - 1];
-    const totalInterest = finalFutureValue - totalDeposited;
-
-
-    // 5. แสดงผลลัพธ์
-    document.getElementById('totalDeposit').textContent = formatter.format(totalDeposited) + " บาท";
-    document.getElementById('totalInterest').textContent = formatter.format(totalInterest) + " บาท";
-    document.getElementById('totalWealth').textContent = formatter.format(finalFutureValue) + " บาท";
-
-    // 6. แสดงกราฟ
-    renderChart(annualLabels, annualData, principal);
+function formatCurrency(num) {
+    return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 }).format(num);
 }
 
+function calculateCompoundInterest() {
+    const P = parseFloat(initialDepositInput.value) || 0;
+    const PMT = parseFloat(monthlyContributionInput.value) || 0;
+    const annualRate = (parseFloat(interestRateInput.value) || 0) / 100;
+    const r = annualRate / 12;
+    const totalYears = parseInt(yearsInput.value) || 1;
+    const totalMonths = totalYears * 12;
 
-/**
- * ฟังก์ชันวาดกราฟด้วย Chart.js
- */
-function renderChart(labels, totalAmounts, principal) {
-    // ต้องมั่นใจว่า Element 'compoundInterestChart' ถูกโหลดแล้ว
-    const chartElement = document.getElementById('compoundInterestChart');
-    if (!chartElement) {
-        console.error("Chart Canvas Element is missing!");
-        return;
+    let labels = [];
+    let principalData = [];
+    let interestData = [];
+    let currentBalance = P;
+    let currentPrincipalAccumulated = P;
+
+    labels.push('ปี 0');
+    principalData.push(P);
+    interestData.push(0);
+
+    for (let m = 1; m <= totalMonths; m++) {
+        let interestForMonth = currentBalance * r;
+        currentBalance += interestForMonth + PMT;
+        currentPrincipalAccumulated += PMT;
+
+        if (m % 12 === 0 || m === totalMonths) {
+            const yearLabel = 'ปี ' + Math.ceil(m / 12);
+            labels.push(yearLabel);
+            principalData.push(Math.round(currentPrincipalAccumulated));
+            interestData.push(Math.round(currentBalance - currentPrincipalAccumulated));
+        }
     }
-    const ctx = chartElement.getContext('2d');
-    
-    if (compoundChart) {
-        compoundChart.destroy();
-    }
-    
-    const monthlyDeposit = parseFloat(document.getElementById('monthlyDeposit').value) || 0;
-    
-    const depositData = labels.map(year => {
-        return principal + (monthlyDeposit * 12 * year);
-    });
-    
-    compoundChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'เงินรวมทั้งหมด (Wealth) - ดอกเบี้ยทบต้น',
-                    data: totalAmounts,
-                    borderColor: 'rgb(0, 123, 255)', 
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4
-                },
-                {
-                    label: 'เงินฝากรวมทั้งหมด (Total Deposit) - เส้นตรง',
-                    data: depositData,
-                    borderColor: 'rgb(40, 167, 69)', 
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0, 
-                    fill: false,
-                    pointRadius: 0
-                }
-            ]
-        },
-        options: {
-            // *** การตั้งค่าสำคัญสำหรับ Responsive ***
-            responsive: true,
-            maintainAspectRatio: false, // ปิดเพื่ออนุญาตให้ปรับขนาดได้อย่างอิสระตาม CSS
-            
-            scales: {
-                x: {
-                    title: { display: true, text: 'ระยะเวลา (ปี)' },
-                    ticks: { stepSize: 1 } 
-                },
-                y: {
-                    title: { display: true, text: 'จำนวนเงิน (บาท)' },
-                    beginAtZero: true
-                }
+
+    const finalBalance = currentBalance;
+    const finalPrincipal = currentPrincipalAccumulated;
+    const finalInterest = finalBalance - finalPrincipal;
+
+    totalPrincipalMetric.innerText = formatCurrency(finalPrincipal);
+    totalInterestMetric.innerText = formatCurrency(finalInterest);
+    totalBalanceMetric.innerText = formatCurrency(finalBalance);
+
+    updateChart(labels, principalData, interestData);
+}
+
+function updateChart(labels, principalData, interestData) {
+    const totalBalanceData = principalData.map((p, i) => p + interestData[i]);
+
+    if (growthChart) {
+        growthChart.data.labels = labels;
+        growthChart.data.datasets[0].data = principalData;
+        growthChart.data.datasets[1].data = totalBalanceData;
+        growthChart.update('none'); 
+    } else {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        
+        growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'เงินต้นสะสม',
+                        data: principalData,
+                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'มูลค่าพอร์ตรวมสุทธิ (เงินต้น + ดอกเบี้ย)',
+                        data: totalBalanceData,
+                        borderColor: '#00f2ff',
+                        borderWidth: 3,
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            gradient.addColorStop(0, 'rgba(0, 242, 255, 0.15)');
+                            gradient.addColorStop(1, 'rgba(0, 242, 255, 0.0)');
+                            return gradient;
+                        },
+                        fill: true,
+                        pointBackgroundColor: '#00f2ff',
+                        pointHoverRadius: 6,
+                        tension: 0.2
+                    }
+                ]
             },
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'การเติบโตของดอกเบี้ยทบต้นเทียบกับเงินฝากรวม'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 12 } } },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.dataset.label + ': ' + context.raw.toLocaleString('th-TH') + ' ฿';
+                            }
+                        }
+                    }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.02)' }, ticks: { color: '#94a3b8', font: { family: 'Orbitron' } } },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.02)' },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { family: 'Orbitron' },
+                            callback: function(value) {
+                                if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M ฿';
+                                return value.toLocaleString('th-TH') + ' ฿';
                             }
-                            if (context.parsed.y !== null) {
-                                label += formatter.format(context.parsed.y) + ' บาท';
-                            }
-                            return label;
                         }
                     }
                 }
             }
+        });
+    }
+}
+
+function linkSliderToInput(slider, boxInput) {
+    slider.addEventListener('input', () => {
+        boxInput.value = slider.value;
+        calculateCompoundInterest();
+    });
+
+    boxInput.addEventListener('input', () => {
+        let currentVal = parseFloat(boxInput.value);
+        const minAttr = parseFloat(slider.min);
+        const maxAttr = parseFloat(slider.max);
+
+        if (!isNaN(currentVal)) {
+            if (currentVal > maxAttr) currentVal = maxAttr;
+            if (currentVal < minAttr) currentVal = minAttr;
+            slider.value = currentVal;
         }
+        calculateCompoundInterest();
+    });
+}
+
+linkSliderToInput(initialDepositInput, initialDepositVal);
+linkSliderToInput(monthlyContributionInput, monthlyContributionVal);
+linkSliderToInput(interestRateInput, interestRateVal);
+linkSliderToInput(yearsInput, yearsVal);
+
+
+// =============================================================
+// 2. Real-time TradingView Chart Engine (พร้อมปลดล็อกสัดส่วนแกน Y)
+// =============================================================
+function renderSP500Widget() {
+    new TradingView.widget({
+        "autosize": true, 
+        "symbol": "VOO",
+        "interval": "D",
+        "timezone": "Asia/Bangkok",
+        "theme": "dark",
+        "style": "1",
+        "locale": "th",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true,
+        "container_id": "tv-sp500-chart-container"
+    });
+}
+
+function renderIndividualStockWidget(targetSymbol) {
+    new TradingView.widget({
+        "autosize": true, 
+        "symbol": targetSymbol,
+        "interval": "D",
+        "timezone": "Asia/Bangkok",
+        "theme": "dark",
+        "style": "1",
+        "locale": "th",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tv-individual-chart-container"
+    });
+}
+
+const terminalStockSelect = document.getElementById('terminalStockSelect');
+if (terminalStockSelect) {
+    terminalStockSelect.addEventListener('change', (e) => {
+        const selectedTicker = e.target.value;
+        renderIndividualStockWidget(selectedTicker);
     });
 }
 
 
-// ผูกฟังก์ชันกับปุ่มและเรียกใช้ครั้งแรกเมื่อ DOM โหลดเสร็จ
-document.addEventListener('DOMContentLoaded', function () {
-    const calculateButton = document.getElementById('calculate-btn');
-    if (calculateButton) {
-        calculateButton.addEventListener('click', calculateCompoundInterest);
-    }
-    
-    // เรียกคำนวณครั้งแรกเมื่อโหลดหน้า
+// =============================================================
+// 3. System Initialization
+// =============================================================
+window.onload = function() {
+    initialDepositVal.value = initialDepositInput.value;
+    monthlyContributionVal.value = monthlyContributionInput.value;
+    interestRateVal.value = interestRateInput.value;
+    yearsVal.value = yearsInput.value;
+
     calculateCompoundInterest();
-});
+    
+    renderSP500Widget();
+    renderIndividualStockWidget(terminalStockSelect.value);
+};
